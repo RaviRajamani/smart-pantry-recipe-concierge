@@ -1,0 +1,809 @@
+{
+  "eval_cases": [
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Hello, what can you help me with?"
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "Hello! I am your **Smart Pantry & Recipe Concierge AI**. Here is how I can assist you:\n\n1. **Manage Your Pantry**:\n   - Check what ingredients you currently have on hand.\n   - Add new ingredients or remove items you've used up.\n\n2. **Discover & Search Recipes**:\n   - Find delicious meal ideas matching your available pantry ingredients to minimize waste.\n   - Browse the full recipe catalog.\n   - View rich recipe cards complete with prep time, ingredients, instructions, and photos.\n\n3. **Adjust & Scale Servings**:\n   - Scale recipes up or down to match your desired number of servings.\n\n4. **Favorites & Catalog Management**:\n   - Save your go-to dishes to your personal favorites list.\n   - Manage and delete recipes from the collection as needed.\n\nWould you like to check your pantry inventory, look for a recipe idea, or add some ingredients to get started?"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "greeting",
+      "agent_data": {
+        "agents": {
+          "simple_agent": {
+            "agent_id": "simple_agent",
+            "agent_type": "LlmAgent",
+            "description": "",
+            "instruction": "You are the Smart Pantry & Recipe Concierge AI. Your mission is to help users suggest delicious meals from ingredients they have on hand, manage their pantry inventory, view their recipe collection, save favorite recipes, and delete recipes when requested. When presenting recipes, always embed their public image URLs using Markdown format (`![Title](image_url)`) so they render as rich image UI cards for the user!",
+            "tools": [
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches the user's current pantry inventory ingredients from Firestore.\n\nReturns:\n    A list of ingredient names currently available in the pantry.",
+                    "name": "get_pantry_inventory",
+                    "response_json_schema": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Adds a new ingredient or food item to the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient or vegetable to add (e.g., 'bell peppers', 'broccoli').\n\nReturns:\n    A confirmation message indicating the item was added to the pantry.",
+                    "name": "add_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "add_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Removes an ingredient or item from the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient to remove from the pantry.\n\nReturns:\n    A confirmation message indicating whether the item was removed.",
+                    "name": "remove_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "remove_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Searches for recipes that match or use any of the provided ingredients in Firestore.\n\nArgs:\n    ingredients: A list of ingredient names available to use.\n\nReturns:\n    A list of matching recipe dictionaries containing recipe_id, title, ingredients, prep_time, and instructions.",
+                    "name": "search_recipes_by_ingredients",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "ingredients": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "title": "Ingredients",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "ingredients"
+                      ],
+                      "title": "search_recipes_by_ingredientsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches all recipes currently available in the Firestore catalog.\n\nReturns:\n    A list of all recipe objects containing recipe_id, title, ingredients, prep_time, servings, and instructions.",
+                    "name": "get_all_recipes",
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Saves a recipe to the user's personal favorites list in Firestore.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to save as favorite (e.g., 'rec_001').\n\nReturns:\n    A confirmation message indicating whether the recipe was saved to favorites.",
+                    "name": "save_favorite_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "save_favorite_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Deletes a recipe from the Firestore catalog upon request.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to delete.\n\nReturns:\n    A message confirming deletion or indicating if the recipe was not found.",
+                    "name": "delete_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "delete_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Scales a recipe's ingredient proportions for a target number of servings.\n\nArgs:\n    recipe_id: The ID of the recipe to scale.\n    target_servings: The desired number of servings.\n\nReturns:\n    A summary string detailing the scaled serving information.",
+                    "name": "scale_recipe_servings",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        },
+                        "target_servings": {
+                          "title": "Target Servings",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "recipe_id",
+                        "target_servings"
+                      ],
+                      "title": "scale_recipe_servingsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Generates an HTML/Markdown UI card for a recipe, including its public Cloud Storage image URL.\n\nArgs:\n    recipe_id: The ID or title of the recipe (e.g. 'rec_001').\n\nReturns:\n    Formatted Markdown/HTML UI card representation of the recipe.",
+                    "name": "get_recipe_card_ui",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "get_recipe_card_uiParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            ],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "simple_agent",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "Hello! I am your **Smart Pantry & Recipe Concierge AI**. Here is how I can assist you:\n\n1. **Manage Your Pantry**:\n   - Check what ingredients you currently have on hand.\n   - Add new ingredients or remove items you've used up.\n\n2. **Discover & Search Recipes**:\n   - Find delicious meal ideas matching your available pantry ingredients to minimize waste.\n   - Browse the full recipe catalog.\n   - View rich recipe cards complete with prep time, ingredients, instructions, and photos.\n\n3. **Adjust & Scale Servings**:\n   - Scale recipes up or down to match your desired number of servings.\n\n4. **Favorites & Catalog Management**:\n   - Save your go-to dishes to your personal favorites list.\n   - Manage and delete recipes from the collection as needed.\n\nWould you like to check your pantry inventory, look for a recipe idea, or add some ingredients to get started?"
+                    }
+                  ],
+                  "role": "model"
+                },
+                "event_time": "2026-09-24T11:06:50.814473Z"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "What's the weather like in San Francisco?"
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "I'm sorry, but I don't have access to real-time weather information. \n\nMy expertise is focused on helping you manage your pantry inventory, find recipes based on ingredients you have, scale servings, and save your favorite dishes. If there's anything food- or cooking-related you'd like help with, feel free to ask!"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "weather_query",
+      "agent_data": {
+        "agents": {
+          "simple_agent": {
+            "agent_id": "simple_agent",
+            "agent_type": "LlmAgent",
+            "description": "",
+            "instruction": "You are the Smart Pantry & Recipe Concierge AI. Your mission is to help users suggest delicious meals from ingredients they have on hand, manage their pantry inventory, view their recipe collection, save favorite recipes, and delete recipes when requested. When presenting recipes, always embed their public image URLs using Markdown format (`![Title](image_url)`) so they render as rich image UI cards for the user!",
+            "tools": [
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches the user's current pantry inventory ingredients from Firestore.\n\nReturns:\n    A list of ingredient names currently available in the pantry.",
+                    "name": "get_pantry_inventory",
+                    "response_json_schema": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Adds a new ingredient or food item to the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient or vegetable to add (e.g., 'bell peppers', 'broccoli').\n\nReturns:\n    A confirmation message indicating the item was added to the pantry.",
+                    "name": "add_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "add_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Removes an ingredient or item from the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient to remove from the pantry.\n\nReturns:\n    A confirmation message indicating whether the item was removed.",
+                    "name": "remove_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "remove_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Searches for recipes that match or use any of the provided ingredients in Firestore.\n\nArgs:\n    ingredients: A list of ingredient names available to use.\n\nReturns:\n    A list of matching recipe dictionaries containing recipe_id, title, ingredients, prep_time, and instructions.",
+                    "name": "search_recipes_by_ingredients",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "ingredients": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "title": "Ingredients",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "ingredients"
+                      ],
+                      "title": "search_recipes_by_ingredientsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches all recipes currently available in the Firestore catalog.\n\nReturns:\n    A list of all recipe objects containing recipe_id, title, ingredients, prep_time, servings, and instructions.",
+                    "name": "get_all_recipes",
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Saves a recipe to the user's personal favorites list in Firestore.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to save as favorite (e.g., 'rec_001').\n\nReturns:\n    A confirmation message indicating whether the recipe was saved to favorites.",
+                    "name": "save_favorite_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "save_favorite_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Deletes a recipe from the Firestore catalog upon request.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to delete.\n\nReturns:\n    A message confirming deletion or indicating if the recipe was not found.",
+                    "name": "delete_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "delete_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Scales a recipe's ingredient proportions for a target number of servings.\n\nArgs:\n    recipe_id: The ID of the recipe to scale.\n    target_servings: The desired number of servings.\n\nReturns:\n    A summary string detailing the scaled serving information.",
+                    "name": "scale_recipe_servings",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        },
+                        "target_servings": {
+                          "title": "Target Servings",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "recipe_id",
+                        "target_servings"
+                      ],
+                      "title": "scale_recipe_servingsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Generates an HTML/Markdown UI card for a recipe, including its public Cloud Storage image URL.\n\nArgs:\n    recipe_id: The ID or title of the recipe (e.g. 'rec_001').\n\nReturns:\n    Formatted Markdown/HTML UI card representation of the recipe.",
+                    "name": "get_recipe_card_ui",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "get_recipe_card_uiParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            ],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "simple_agent",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "I'm sorry, but I don't have access to real-time weather information. \n\nMy expertise is focused on helping you manage your pantry inventory, find recipes based on ingredients you have, scale servings, and save your favorite dishes. If there's anything food- or cooking-related you'd like help with, feel free to ask!"
+                    }
+                  ],
+                  "role": "model"
+                },
+                "event_time": "2026-09-24T11:06:50.887977Z"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "What is the capital of France?"
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "The capital of France is Paris."
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "reference": {
+        "response": {
+          "parts": [
+            {
+              "text": "The capital of France is Paris."
+            }
+          ],
+          "role": "model"
+        }
+      },
+      "eval_case_id": "capital_lookup",
+      "agent_data": {
+        "agents": {
+          "simple_agent": {
+            "agent_id": "simple_agent",
+            "agent_type": "LlmAgent",
+            "description": "",
+            "instruction": "You are the Smart Pantry & Recipe Concierge AI. Your mission is to help users suggest delicious meals from ingredients they have on hand, manage their pantry inventory, view their recipe collection, save favorite recipes, and delete recipes when requested. When presenting recipes, always embed their public image URLs using Markdown format (`![Title](image_url)`) so they render as rich image UI cards for the user!",
+            "tools": [
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches the user's current pantry inventory ingredients from Firestore.\n\nReturns:\n    A list of ingredient names currently available in the pantry.",
+                    "name": "get_pantry_inventory",
+                    "response_json_schema": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Adds a new ingredient or food item to the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient or vegetable to add (e.g., 'bell peppers', 'broccoli').\n\nReturns:\n    A confirmation message indicating the item was added to the pantry.",
+                    "name": "add_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "add_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Removes an ingredient or item from the user's pantry inventory in Firestore.\n\nArgs:\n    item: The name of the ingredient to remove from the pantry.\n\nReturns:\n    A confirmation message indicating whether the item was removed.",
+                    "name": "remove_pantry_item",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "item": {
+                          "title": "Item",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "title": "remove_pantry_itemParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Searches for recipes that match or use any of the provided ingredients in Firestore.\n\nArgs:\n    ingredients: A list of ingredient names available to use.\n\nReturns:\n    A list of matching recipe dictionaries containing recipe_id, title, ingredients, prep_time, and instructions.",
+                    "name": "search_recipes_by_ingredients",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "ingredients": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "title": "Ingredients",
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "ingredients"
+                      ],
+                      "title": "search_recipes_by_ingredientsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Fetches all recipes currently available in the Firestore catalog.\n\nReturns:\n    A list of all recipe objects containing recipe_id, title, ingredients, prep_time, servings, and instructions.",
+                    "name": "get_all_recipes",
+                    "response_json_schema": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Saves a recipe to the user's personal favorites list in Firestore.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to save as favorite (e.g., 'rec_001').\n\nReturns:\n    A confirmation message indicating whether the recipe was saved to favorites.",
+                    "name": "save_favorite_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "save_favorite_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Deletes a recipe from the Firestore catalog upon request.\n\nArgs:\n    recipe_id: The unique ID or title of the recipe to delete.\n\nReturns:\n    A message confirming deletion or indicating if the recipe was not found.",
+                    "name": "delete_recipe",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "delete_recipeParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Scales a recipe's ingredient proportions for a target number of servings.\n\nArgs:\n    recipe_id: The ID of the recipe to scale.\n    target_servings: The desired number of servings.\n\nReturns:\n    A summary string detailing the scaled serving information.",
+                    "name": "scale_recipe_servings",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        },
+                        "target_servings": {
+                          "title": "Target Servings",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "recipe_id",
+                        "target_servings"
+                      ],
+                      "title": "scale_recipe_servingsParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "function_declarations": [
+                  {
+                    "description": "Generates an HTML/Markdown UI card for a recipe, including its public Cloud Storage image URL.\n\nArgs:\n    recipe_id: The ID or title of the recipe (e.g. 'rec_001').\n\nReturns:\n    Formatted Markdown/HTML UI card representation of the recipe.",
+                    "name": "get_recipe_card_ui",
+                    "parameters_json_schema": {
+                      "properties": {
+                        "recipe_id": {
+                          "title": "Recipe Id",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "recipe_id"
+                      ],
+                      "title": "get_recipe_card_uiParams",
+                      "type": "object"
+                    },
+                    "response_json_schema": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            ],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "simple_agent",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "The capital of France is Paris."
+                    }
+                  ],
+                  "role": "model"
+                },
+                "event_time": "2026-09-24T11:06:50.884638Z"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
