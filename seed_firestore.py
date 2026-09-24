@@ -1,9 +1,10 @@
 # Copyright 2026 Google LLC
 # Seed script for Smart Pantry & Recipe Concierge Firestore database
 
+import os
 from google.cloud import firestore
 
-PROJECT_ID = "qwiklabs-gcp-01-b0428a3d39f6"
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "qwiklabs-gcp-02-02945075a7b2")
 
 
 def seed_database():

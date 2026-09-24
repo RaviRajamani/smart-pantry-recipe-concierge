@@ -25,10 +25,10 @@ except ImportError:
 from .a2ui_utils import a2ui_callback
 from .a2ui_instruction import A2UI_INSTRUCTION
 
-MODEL = "gemini-3.8-flash"
-PROJECT_ID = "qwiklabs-gcp-01-b0428a3d39f6"
-BUCKET_NAME = "smart-pantry-recipes-qwiklabs-gcp-01-b0428a3d39f6"
-MEMORY_BANK_ID = "8335452625751244800"
+MODEL = os.getenv("MODEL", "gemini-3.8-flash")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "qwiklabs-gcp-02-02945075a7b2")
+BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", f"smart-pantry-recipes-{PROJECT_ID}")
+MEMORY_BANK_ID = os.getenv("MEMORY_BANK_ID", "8335452625751244800")
 
 # In-memory fallback dataset
 IN_MEMORY_PANTRY = [
@@ -36,7 +36,7 @@ IN_MEMORY_PANTRY = [
     "pasta", "olive oil", "chicken breast", "rice", "onions", "broccoli", "bell peppers"
 ]
 
-GCS_BUCKET_URL = "https://storage.googleapis.com/smart-pantry-recipes-qwiklabs-gcp-01-b0428a3d39f6"
+GCS_BUCKET_URL = f"https://storage.googleapis.com/{BUCKET_NAME}"
 
 IN_MEMORY_RECIPES = [
     {
