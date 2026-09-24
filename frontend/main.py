@@ -33,13 +33,10 @@ import httpx
 from a2a.client import ClientConfig, ClientFactory
 from a2a.types import (
     AgentCard,
-    FilePart,
     Message,
     Part,
     Role,
     TaskArtifactUpdateEvent,
-    TextPart,
-    TransportProtocol,
 )
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -123,14 +120,14 @@ def _extract_parts(parts: list) -> list[dict]:
     out: list[dict] = []
     for p in parts:
         root = getattr(p, "root", p)
-        if isinstance(root, TextPart) and getattr(root, "text", None):
-            out.append({"kind": "text", "text": root.text})
+        if getattr(root, "text", None):
+            out.append({"kind": "text", "text": getattr(root, "text")})
         elif getattr(root, "data", None) is not None:
             meta = getattr(root, "metadata", None) or {}
             mime = meta.get("mimeType") if isinstance(meta, dict) else None
             if mime == _A2UI_MIME:
                 out.append({"kind": "a2ui", "data": root.data})
-        elif isinstance(root, FilePart):
+        elif getattr(root, "file", None) is not None:
             uri = getattr(getattr(root, "file", None), "uri", None)
             if uri:
                 out.append({"kind": "text", "text": uri})
@@ -146,15 +143,7 @@ async def chat(req: Request):
 
     async with httpx.AsyncClient(headers=_auth_headers(), timeout=120) as client:
         card = await _get_card(client)
-        factory = ClientFactory(
-            ClientConfig(
-                supported_transports=[
-                    TransportProtocol.jsonrpc,
-                    TransportProtocol.http_json,
-                ],
-                httpx_client=client,
-            )
-        )
+        factory = ClientFactory(ClientConfig(httpx_client=client))
         a2a_client = factory.create(card)
 
         msg = Message(
