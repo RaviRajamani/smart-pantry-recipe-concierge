@@ -1,106 +1,116 @@
 # 🍳 Smart Pantry & Recipe Concierge
 
-An AI culinary concierge agent built with **Google ADK**, **Gemini 2.5 Flash**, **TheMealDB API**, and **Vertex AI Multimodal Models**. 
+An AI culinary concierge agent built with **Google Agent Development Kit (ADK)**, **Gemini 2.5 Flash**, **TheMealDB API**, and **Vertex AI Multimodal Models**. It manages real-time pantry inventory, suggests recipes based on available ingredients, generates AI food photography and cooking videos, and outputs dynamic A2UI rich cards.
 
 ---
 
-## 📽️ Demo Video Walkthrough
+## 📽️ Demo Walkthrough
 
 ![Smart Pantry & Recipe Concierge Demo](assets/agent_demo_video.gif)
 
 ---
 
-## Project Structure
+## 🛠️ Google Cloud Services & Integrations
 
-```
-smart-pantry-recipe-concierge/
-├── app/                       # Core agent code
-│   ├── agent.py               # Main ADK agent logic, tools & multimodal generators
-│   ├── fast_api_app.py        # FastAPI backend server
-│   ├── a2ui_utils.py          # A2UI response formatting & callbacks
-│   └── app_utils/             # App utilities and helpers
-├── frontend/                  # Web app frontend
-│   ├── main.py                # FastAPI proxy server for A2A deployment
-│   └── static/index.html      # Responsive culinary dialogue layout & A2UI renderer
-├── assets/                    # Demo video GIF & screenshot frames
-├── tests/                     # Unit, integration, and load tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
-```
+The agent connects directly to the following Google Cloud services and APIs:
 
-> 💡 **Tip:** Use [Antigravity CLI](https://antigravity.google/) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
-
-## Requirements
-
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
-
-
-## Quick Start
-
-Install `agents-cli` and its skills if not already installed:
-
-```bash
-uvx google-agents-cli setup
-```
-
-Install required packages:
-
-```bash
-agents-cli install
-```
-
-Test the agent with a local web server:
-
-```bash
-agents-cli playground
-```
-
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `agents-cli eval`    | Evaluate agent behavior (generate, grade, analyze, and more — see `agents-cli eval --help`) |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-| `agents-cli deploy`  | Deploy agent to Agent Runtime                                                                |
-| `agents-cli publish gemini-enterprise` | Register deployed agent to Gemini Enterprise                    || [A2A Inspector](https://github.com/a2aproject/a2a-inspector) | Launch A2A Protocol Inspector                                                        |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
+- **Google Cloud Firestore**: Persistent database storage for pantry inventory (`pantry_inventory`) and user saved recipes (`saved_recipes`).
+- **Vertex AI Memory Bank (`VertexAiMemoryBankService`)**: Cross-session conversational memory bank persistence.
+- **Google Cloud Storage (GCS)**: Stores and serves generated food photography and short cooking videos from a public GCS bucket.
+- **Vertex AI Gemini Models**:
+  - `gemini-2.5-flash`: Primary agent reasoning and tool call execution model.
+  - `gemini-3.1-flash-lite-image`: Generates gourmet food photography for dishes and ingredients.
+  - `gemini-omni-flash-preview`: Generates short culinary cooking and plating videos via the Vertex AI Interactions API.
+- **TheMealDB REST API**: External recipe lookup service for global meal searches.
+- **A2UI (Agent-to-User Interface) Catalog 0.8**: Renders rich interactive card components in the chat interface.
 
 ---
 
-## Development
+## 🔧 Implemented Agent Tools
 
-Edit your agent logic in `app/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
+The agent exposes the following 13 tools registered in `app/agent.py`:
 
-## Deployment
+| Tool Name | Function & Integration |
+| :--- | :--- |
+| `get_pantry_inventory` | Queries Firestore for all current items in the user's pantry. |
+| `add_pantry_item` | Inserts new items into the Firestore pantry inventory collection. |
+| `remove_pantry_item` | Deletes specified items from the Firestore pantry inventory. |
+| `search_recipes_by_ingredients` | Filters recipes in Firestore that match given ingredient inputs. |
+| `get_all_recipes` | Retrieves all available recipes stored in Firestore. |
+| `save_favorite_recipe` | Saves custom or online recipes to user favorites in Firestore. |
+| `delete_recipe` | Removes a recipe entry from Firestore. |
+| `scale_recipe_servings` | Recalculates ingredient quantities and nutritional macros for target serving sizes. |
+| `get_recipe_card_ui` | Constructs structured A2UI card schemas for visual recipe presentation. |
+| `export_grocery_shopping_list` | Generates a formatted grocery shopping list for missing recipe ingredients. |
+| `search_online_meal_db` | Queries TheMealDB API for global recipe instructions, categories, and meal photos. |
+| `generate_dish_image` | Uses `gemini-3.1-flash-lite-image` to generate food photos, saves as artifacts, and uploads to GCS. |
+| `generate_dish_video` | Uses `gemini-omni-flash-preview` to generate cooking videos, saves as artifacts, and uploads to GCS. |
 
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
+---
+
+## 📁 Repository Structure
+
+```
+smart-pantry-recipe-concierge/
+├── app/                       # Core ADK Agent & Backend
+│   ├── agent.py               # Root agent, tools, Firestore helpers & multimodal generators
+│   ├── fast_api_app.py        # FastAPI server endpoint
+│   ├── a2ui_utils.py          # A2UI schema builder & response callbacks
+│   └── app_utils/             # Agent Runtime and A2A protocol adapters
+├── frontend/                  # Deployed Web App Proxy & UI
+│   ├── main.py                # FastAPI A2A proxy server
+│   └── static/index.html      # Theme-matched culinary dialogue interface
+├── assets/                    # Demo video GIF & walkthrough screenshots
+├── tests/                     # Integration and evaluation test suites
+├── deployment/                # Infrastructure & Terraform deployment manifests
+├── pyproject.toml             # Python project dependencies
+└── agents-cli-manifest.yaml   # Agents CLI configuration
 ```
 
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
+---
 
-## Observability
+## 🚀 Local Setup & Execution Instructions
 
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+### Prerequisites
+- Python 3.11+
+- `uv` package manager (`pip install uv` or `uv tool install google-agents-cli`)
+- Google Cloud SDK authenticated (`gcloud auth application-default login`)
 
-## A2A Inspector
+### 1. Install Dependencies
+```bash
+uv sync
+```
 
-This agent supports the [A2A Protocol](https://a2a-protocol.org/). Use the [A2A Inspector](https://github.com/a2aproject/a2a-inspector) to test interoperability.
-See the [A2A Inspector docs](https://github.com/a2aproject/a2a-inspector) for details.
+### 2. Set Environment Variables
+```bash
+export AGENT_ENGINE_RESOURCE_NAME="projects/<PROJECT_ID>/locations/us-east1/reasoningEngines/<ENGINE_ID>"
+export AGENT_DIRECTORY="app"
+export GOOGLE_GENAI_USE_VERTEXAI=true
+```
+
+### 3. Run the Agent Locally
+To start the ADK agent server:
+```bash
+uv run python -m app.fast_api_app
+```
+
+### 4. Run the Web Frontend Proxy Locally
+To start the local web frontend server:
+```bash
+cd frontend
+uv run python main.py
+```
+Open a web browser and navigate to port `8080` on localhost.
+
+---
+
+## 🧪 Running Tests & Evaluation
+
+To execute the test suite:
+```bash
+# Run unit and integration tests
+uv run pytest
+
+# Run response quality evaluation
+uv run python tests/eval/response_quality.py
+```
