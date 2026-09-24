@@ -1,16 +1,28 @@
-# simple-agent
+# 🍳 Smart Pantry & Recipe Concierge
 
-Simple ReAct agent
-Agent generated with `agents-cli` version `1.7.0`
+An AI culinary concierge agent built with **Google ADK**, **Gemini 2.5 Flash**, **TheMealDB API**, and **Vertex AI Multimodal Models**. 
+
+---
+
+## 📽️ Demo Video Walkthrough
+
+![Smart Pantry & Recipe Concierge Demo](assets/agent_demo_video.gif)
+
+---
 
 ## Project Structure
 
 ```
-simple-agent/
-├── app/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   ├── fast_api_app.py        # FastAPI Backend server
+smart-pantry-recipe-concierge/
+├── app/                       # Core agent code
+│   ├── agent.py               # Main ADK agent logic, tools & multimodal generators
+│   ├── fast_api_app.py        # FastAPI backend server
+│   ├── a2ui_utils.py          # A2UI response formatting & callbacks
 │   └── app_utils/             # App utilities and helpers
+├── frontend/                  # Web app frontend
+│   ├── main.py                # FastAPI proxy server for A2A deployment
+│   └── static/index.html      # Responsive culinary dialogue layout & A2UI renderer
+├── assets/                    # Demo video GIF & screenshot frames
 ├── tests/                     # Unit, integration, and load tests
 ├── GEMINI.md                  # AI-assisted development guide
 └── pyproject.toml             # Project dependencies
